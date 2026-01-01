@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-snapshot-config
+data:
+  VAULT_ROLE: "snapshot-role"
+  SNAPSHOT_DIR: "/snapshots"
+  SNAPSHOT_RETENTION_DAYS: "7"
+  SNAPSHOT_FILENAME_PREFIX: "vault"

@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-snapshot
+spec:
+  schedule: "0 1,13 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: snapshot
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "200m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"

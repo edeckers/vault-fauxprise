@@ -1,0 +1,35 @@
+# Ignore kubectl/kustomize build output
+build/
+*.build
+
+# Ignore temporary files
+*.tmp
+*.swp
+*~
+
+# Ignore secrets (never commit real secrets!)
+*.secret
+*.key
+*.pem
+secrets/
+
+# Ignore local environment files
+.env
+.env.local
+.env.*.local
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.iml
+
+# Ignore test output
+test-output/
+
+# User-specific overlays (examples are tracked)
+k8s/overlays/
+!k8s/examples/

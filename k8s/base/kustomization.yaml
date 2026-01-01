@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: vault-fauxprise
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: vault-fauxprise
+      app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - common-configmap.yaml
+  - snapshot/
+  - token-rotation/

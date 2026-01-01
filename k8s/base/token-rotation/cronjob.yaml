@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-token-rotation
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: vault-token-rotation
+        spec:
+          serviceAccountName: vault-token-rotation
+          restartPolicy: OnFailure
+          containers:
+            - name: token-rotation
+              image: hashicorp/vault:latest
+              envFrom:
+                - configMapRef:
+                    name: vault-fauxprise-common
+                - configMapRef:
+                    name: vault-token-rotation-config
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  echo "Starting Vault token rotation process..."
+
+                  export KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+
+                  export VAULT_TOKEN=$(vault write -field=token auth/${VAULT_AUTH_PATH}/login \
+                    role=${VAULT_ROLE} \
+                    jwt=${KUBE_TOKEN})
+
+                  echo "Authenticated to Vault"
+
+                  # Rotate credentials for each configured path
+                  echo "$ROTATION_PATHS" | tr ',' '\n' | while read -r path; do
+                    path=$(echo "$path" | xargs)  # Trim whitespace
+                    [ -z "$path" ] && continue  # Skip empty paths
+                    echo "Rotating credentials at: $path"
+                    vault write -f "$path" || echo "Warning: Failed to rotate $path"
+                  done
+
+                  echo "Token rotation complete"

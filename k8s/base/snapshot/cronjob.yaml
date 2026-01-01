@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-snapshot
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: vault-snapshot
+        spec:
+          serviceAccountName: vault-snapshot
+          restartPolicy: OnFailure
+          containers:
+            - name: snapshot
+              image: hashicorp/vault:latest
+              envFrom:
+                - configMapRef:
+                    name: vault-fauxprise-common
+                - configMapRef:
+                    name: vault-snapshot-config
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  echo "Starting Vault snapshot process..."
+
+                  export KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+
+                  export VAULT_TOKEN=$(vault write -field=token auth/${VAULT_AUTH_PATH}/login \
+                    role=${VAULT_ROLE} \
+                    jwt=${KUBE_TOKEN})
+
+                  echo "Authenticated to Vault"
+
+                  SNAPSHOT_FILE="${SNAPSHOT_DIR}/${SNAPSHOT_FILENAME_PREFIX}-$(date +%Y%m%d-%H%M%S).snap"
+                  vault operator raft snapshot save "$SNAPSHOT_FILE"
+
+                  echo "Snapshot saved to $SNAPSHOT_FILE"
+
+                  find ${SNAPSHOT_DIR} -name "${SNAPSHOT_FILENAME_PREFIX}-*.snap" -mtime +${SNAPSHOT_RETENTION_DAYS} -delete
+                  echo "Cleaned up snapshots older than ${SNAPSHOT_RETENTION_DAYS} days"
+              volumeMounts:
+                - name: snapshots
+                  mountPath: /snapshots
+          volumes:
+            - name: snapshots
+              persistentVolumeClaim:
+                claimName: vault-snapshots-pvc

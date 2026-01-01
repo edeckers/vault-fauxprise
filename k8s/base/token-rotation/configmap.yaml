@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-token-rotation-config
+data:
+  VAULT_ROLE: "token-rotation-role"
+  # Comma-separated list of rotation paths - MUST be overridden in overlays
+  # Example: "/auth/aws/config/rotate-root,/auth/azure/rotate-root"
+  ROTATION_PATHS: ""

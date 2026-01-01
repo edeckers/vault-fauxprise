@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: vault-fauxprise-prod
+
+resources:
+  - ../../base
+
+patches:
+  - path: common-config-patch.yaml
+  - path: snapshot-config-patch.yaml
+  - path: snapshot-cronjob-patch.yaml
+  - path: snapshot-pvc-patch.yaml
+  - path: token-rotation-config-patch.yaml
+
+labels:
+  - pairs:
+      environment: production
